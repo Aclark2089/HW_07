@@ -9,22 +9,42 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Created by Alex on 9/26/16.
+ * Created by Alex on 10/17/16.
  *
  * Code Adapted from template by Dave Small
  *
  * ImageFrame.java
- *  - Setup target_image frame for use by ProjectName.java
- *  - Open sel source img
- *  - Create sq. BufferedImage
- *  - Set bkgrnd color black
- *  - Compute avg. pixel color of the upper square portion of the source target_image
- *  - draw a solid circle of the average color that fills target
- *  - recursively (until quad circle radius <= user spec. minimum
- *      - for each quad
- *          - compute avg. pixel color cor. to that quad in the src img
- *          - draw solid circle filling the quad using that average color
- *  - Display img to user
+ *  - Setup target_image frame for use by AffineTransformFractal.java
+ *  - Setup title bar
+ *  - File menu w/
+ *      - Load IFS description
+ *      - Configure Image
+ *      - Display IFS
+ *      - Save Image
+ *      - Exit
+ *
+ *  - Load IFS Description :
+ *      - Prompt user for the file containing IFS description (JFileChooser)
+ *      - Load IFS description from config file
+ *      - Use scanner to read from file
+ *
+ *  - Configure Image :
+ *      - Prompt user for image height and width
+ *      - Prompt user for the background & foreground colors as hex #s
+ *      - Create BufferedImage
+ *
+ *  - Display IFS :
+ *    - Prompt user for the # of generations n
+ *    - If implements MRCM you may prompt for an image to tile
+ *    - Generate the nth generation image
+ *    - Display image
+ *
+ *  - Save Image :
+ *      - Program shall prompt user for output file and save current IFS image as PNG
+ *      - Use codeblock given for output
+ *
+ *  - Testing :
+ *      - Use provided test cases for testing output
  *
  */
 

@@ -5,11 +5,11 @@ import javax.swing.*;
  *
  * Code Adapted from template by Dave Small
  *
- * ProjectName.java
- *  - Declare ImageFrame of set size, modify close policy, display image generated using ProjectName simulation
+ * AffineTransformFractal.java
+ *  - Declare ImageFrame of set size, modify close policy, display image generated using AffineTransformFractal simulation
  *
  */
-public class ProjectName {
+public class AffineTransformFractal {
 
     // WINDOW SIZE
     private static final int WIDTH = 500;
@@ -17,6 +17,16 @@ public class ProjectName {
 
     // Main
     public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                runAndDisplayGUI();
+            }
+        });
+    }
+
+
+    public static void runAndDisplayGUI() {
         JFrame frame = new ImageFrame(WIDTH, HEIGHT);               // Declare
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);       // Set close policy
         frame.setVisible(true);                                     // Show GUI
