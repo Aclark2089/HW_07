@@ -64,7 +64,7 @@ public class ImageFrame extends JFrame {
     // Constructor
     public ImageFrame(int width, int height) {
 
-        this.setTitle("CAP3027 Fall 2016 -- HW07 -- R. Alex Clark");        // Frame Title
+        this.setTitle("CAP3027 2016 -- HW07 -- R. Alex Clark");        // Frame Title
         this.setSize(width, height);                                        // Frame Size
         addMenu();                                                          // Add Menu to Frame
 
