@@ -54,7 +54,6 @@ public class ImageFrame extends JFrame {
     private JFileChooser chooser = new JFileChooser();  // File chooser
     private BufferedImage source_image, target_image;   // Source and Target images
     private Graphics2D target_graphics;                 // Target graphics2d object
-    private int minCircleSize;                          // Minimum circle diameter for recursion
 
     // Colors & color masks
     private int color_background = 0xff000000,
@@ -65,19 +64,22 @@ public class ImageFrame extends JFrame {
     // Constructor
     public ImageFrame(int width, int height) {
 
-        this.setTitle("CAP3027 2016 -- HWXX -- R. Alex Clark");         // Frame Title
-        this.setSize(width, height);                                    // Frame Size
-        addMenu();                                                      // Add Menu to Frame
+        this.setTitle("CAP3027 Fall 2016 -- HW07 -- R. Alex Clark");        // Frame Title
+        this.setSize(width, height);                                        // Frame Size
+        addMenu();                                                          // Add Menu to Frame
 
     }
 
     // Setup menu for frame
     private void addMenu() {
 
-        JMenu fileMenu = new JMenu("File");                             // Setup file
+        JMenu fileMenu = new JMenu("File");                                 // Setup file menu
 
-        JMenuItem loadSrcImgItem = new JMenuItem("Load Source Image");  // Setup load source target_image item
-        JMenuItem exitItem = new JMenuItem("Exit");                     // Setup exit item
+        JMenuItem loadIFSDescItem = new JMenuItem("Load IFS Description");  // Load IFS item
+        JMenuItem configureImgItem = new JMenuItem("Configure Image");      // Configure image item
+        JMenuItem displayIFSItem = new JMenuItem("Display IFS");            // Display IFS item
+        JMenuItem saveImgItem = new JMenuItem("Save Image");                // Save Image Item
+        JMenuItem exitItem = new JMenuItem("Exit");                         // Setup Exit Ttem
 
         // Setup listener for File menu exit action
         exitItem.addActionListener(new ActionListener() {
@@ -87,48 +89,44 @@ public class ImageFrame extends JFrame {
             }
         });
 
-        // Setup listener for crystal toroid item of "File" menu
-        loadSrcImgItem.addActionListener(new ActionListener() {
+        // Setup listener for Load IFS Description Item
+        loadIFSDescItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+            }
 
-                minCircleSize = -1;             // User input for circle diameter
-                boolean setup_ready = false;    // Check for valid counts
+        });
 
-                source_image = getSourceImage();    // Choose source image
-                if (source_image != null) minCircleSize = promptCountWithMessage("Enter minimum circle diameter (integer): ");  // Prompt for circle dia.
-                if (minCircleSize > 0) setup_ready = true;                                                                      // Create G2D object from img
+        // Setup listener for Configure Image Item
+        configureImgItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
 
-                // Proceed if count successfully captured
-                if (setup_ready) {
+        });
 
-                    // Log initial values
-                    System.out.printf("Beginning OpArt creation with values\nImage:\n\tWidth: %d\n\tHeight: %d\nCircle Diameter: %d\n",
-                            source_image.getWidth(), source_image.getHeight(), minCircleSize);
+        // Setup listener for Display IFS Item
+        displayIFSItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
 
-                    // Setup target image to be same dimensions as cropped source image
-                    target_image = new BufferedImage(source_image.getWidth(), source_image.getHeight(), BufferedImage.TYPE_INT_ARGB);
-                    setupSimulationBufferedImage(target_image);                                     // Set target background to black
-                    target_graphics = (Graphics2D) target_image.createGraphics();                   // Create G2D Object from img
-                    target_graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING,
-                           RenderingHints.VALUE_ANTIALIAS_ON );                                     // Prevent artifacting & lines
+        });
 
-                    // Perform recursive filling of square to get wanted image
-                    fillSquare(target_graphics, source_image, 0, 0, target_image.getWidth(), target_image.getHeight());
-
-                    // Display resulting target_image
-                    displayBufferedImage(target_image);
-
-                }
-                else System.out.println("Simulation Cancelled By User"); // Log user cancelled prompts
+        // Setup listener for Save Image Item
+        saveImgItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
             }
 
         });
 
         // File menu setup
-        fileMenu.add(loadSrcImgItem);
+        fileMenu.add(loadIFSDescItem);
+        fileMenu.add(configureImgItem);
+        fileMenu.add(displayIFSItem);
+        fileMenu.add(saveImgItem);
         fileMenu.add(exitItem);
-
 
         JMenuBar menuBar = new JMenuBar();                  // Declare menuBar
         menuBar.add(fileMenu);                              // Add 'File' menu to bar
@@ -144,7 +142,7 @@ public class ImageFrame extends JFrame {
         drawCirlce(target_graphics, x, y, width, height, avg_c);
 
         // If we can keep going down in circle size depth, recursively call function to continue to next layer
-        if ((width/2) > minCircleSize) {
+        if ((width/2) > 2) {
             fillSquare(target_graphics, source_image, x, y, width/2, height/2);                             // Top Left
             fillSquare(target_graphics, source_image, x + (width/2), y, width/2, height/2);                 // Top Right
             fillSquare(target_graphics, source_image, x, y + (height/2), width/2, height/2);                // Bottom Left
