@@ -95,9 +95,14 @@ public class ImageFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                boolean setupReady = false;                 // Check for valid file
-                sourceIFSFile = getSourceImage();           // Get source file
-                if (source_image != null)
+                boolean setupReady = false;                     // Check for valid file
+                sourceIFSFile = getFile();                      // Get source file
+                if (sourceIFSFile != null) setupReady = true;   // Check ready for simulation
+
+                if (setupReady) {
+
+                }
+                else System.out.println("User cancelled simulation");
 
             }
 
