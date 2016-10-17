@@ -52,8 +52,9 @@ import java.io.IOException;
 public class ImageFrame extends JFrame {
 
     private JFileChooser chooser = new JFileChooser();  // File chooser
-    private BufferedImage source_image, target_image;   // Source and Target images
-    private Graphics2D target_graphics;                 // Target graphics2d object
+    private File sourceIFSFile, outputIFSFile;          // Chosen IFS file & output file
+    private BufferedImage targetImage;                  // Saved output image
+    private Graphics2D targetGraphics;                  // Target graphics2d object
 
     // Colors & color masks
     private int color_background = 0xff000000,
@@ -93,6 +94,11 @@ public class ImageFrame extends JFrame {
         loadIFSDescItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+
+                boolean setupReady = false;                 // Check for valid file
+                sourceIFSFile = getSourceImage();           // Get source file
+                if (source_image != null)
+
             }
 
         });
@@ -117,6 +123,19 @@ public class ImageFrame extends JFrame {
         saveImgItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+
+//                try
+//                {
+//                    javax.imageio.ImageIO.write( image, "png", outputFile );
+//                }
+//                catch ( IOException e )
+//                {
+//                    JOptionPane.showMessageDialog( ImageFrame.this,
+//                            "Error saving file",
+//                            "oops!",
+//                            JOptionPane.ERROR_MESSAGE );
+//                }
+
             }
 
         });
@@ -133,70 +152,6 @@ public class ImageFrame extends JFrame {
         this.setJMenuBar(menuBar);                          // Set menuBar into frame
 
     }
-
-    void fillSquare(Graphics2D target_graphics, BufferedImage source_image, float x, float y, float width, float height) {
-
-        // Compute color average for given start x,y over span WxL
-        Color avg_c = computeAvgPixColor(source_image, x, x + width, y, y + height);
-        // Draw circle using given graphics object from given start x,y with radius sqrt(W*L / PI) and average section color
-        drawCirlce(target_graphics, x, y, width, height, avg_c);
-
-        // If we can keep going down in circle size depth, recursively call function to continue to next layer
-        if ((width/2) > 2) {
-            fillSquare(target_graphics, source_image, x, y, width/2, height/2);                             // Top Left
-            fillSquare(target_graphics, source_image, x + (width/2), y, width/2, height/2);                 // Top Right
-            fillSquare(target_graphics, source_image, x, y + (height/2), width/2, height/2);                // Bottom Left
-            fillSquare(target_graphics, source_image, x + (width/2), y + (height/2), width/2, height/2);    // Bottom Right
-        }
-
-    }
-
-    // Compute the average pixel color of given quadrant
-    private Color computeAvgPixColor(BufferedImage image, float xmin, float xmax, float ymin, float ymax) {
-
-        int r, g, b, ARGB = 0;
-        float r_value = 0, b_value = 0, g_value = 0, i, j, size = 0;
-
-        for (i = ymin; i < ymax; i++) {
-            for (j = xmin; j < xmax; j++) {
-                ARGB = image.getRGB((int) j, (int) i);      // Capture each channel
-                r_value += ((ARGB & red_mask) >>> 16);
-                g_value += ((ARGB & green_mask) >>> 8);
-                b_value += (ARGB & blue_mask);
-                size++;
-            }
-        }
-
-        // Average float values
-        r_value /= size;
-        g_value /= size;
-        b_value /= size;
-
-        // Clamp average values
-        r = clampValue((int) r_value);
-        g = clampValue((int) g_value);
-        b  = clampValue((int) b_value);
-
-        // Return new avg color
-        return new Color(r,  g, b);
-
-    }
-
-    // Draw circle with given graphics object over given coords with given color object
-    private void drawCirlce(Graphics2D target_graphics, float x, float y, float width, float height, Color avg_color) {
-        Shape circle = new Ellipse2D.Float(x, y, width, height);
-        target_graphics.setColor(avg_color);
-        target_graphics.draw(circle);
-        target_graphics.fill(circle);
-    }
-
-    // Set passed buffered image background pixel color
-    private void setupSimulationBufferedImage(BufferedImage image) {
-        for(int i = 0, j; i < image.getHeight(); i++)
-            for (j = 0; j < image.getWidth(); j++)
-                image.setRGB(i, j, color_background);
-    }
-
 
     // Get the source image
     private BufferedImage getSourceImage() {
@@ -215,24 +170,7 @@ public class ImageFrame extends JFrame {
             }
         }
 
-        if (src_img != null) src_img = performImgCrop(src_img); // Crop image to equal LxW
         return src_img;                                         // Return image
-    }
-
-    // Crop the given image to the correct size
-    private BufferedImage performImgCrop(BufferedImage src_img) {
-
-        BufferedImage sub_img;                                                          // Sub image for cropping to square
-        int width = src_img.getWidth(), height = src_img.getHeight();                   // Get src_img size attrs
-
-        // Perform crop based on largest size attr, prefer smaller
-        if (width > height) sub_img = src_img.getSubimage(0, 0, height, height);        // Crop width
-        else if (width < height) sub_img = src_img.getSubimage(0, 0, width, width);     // Crop height
-        else sub_img = src_img;                                                         // Equal, do nothing
-
-        System.out.println("Reported cropped image size values of: " + sub_img.getWidth() + " " + sub_img.getHeight());
-
-        return sub_img;                                                                 // Return new sub image
     }
 
     // Prompt file selection from user and return it
