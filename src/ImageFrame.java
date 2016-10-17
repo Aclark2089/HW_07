@@ -1,3 +1,5 @@
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -5,8 +7,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.util.Scanner;
 
 /**
  * Created by Alex on 10/17/16.
@@ -48,13 +50,14 @@ import java.io.IOException;
  *
  */
 
-
 public class ImageFrame extends JFrame {
 
     private JFileChooser chooser = new JFileChooser();  // File chooser
     private File sourceIFSFile, outputIFSFile;          // Chosen IFS file & output file
     private BufferedImage targetImage;                  // Saved output image
     private Graphics2D targetGraphics;                  // Target graphics2d object
+
+    private boolean debug = true;                       // Debugging
 
     // Colors & color masks
     private int color_background = 0xff000000,
@@ -65,7 +68,7 @@ public class ImageFrame extends JFrame {
     // Constructor
     public ImageFrame(int width, int height) {
 
-        this.setTitle("CAP3027 2016 -- HW07 -- R. Alex Clark");        // Frame Title
+        this.setTitle("CAP3027 2016 -- HW07 -- R. Alex Clark");             // Frame Title
         this.setSize(width, height);                                        // Frame Size
         addMenu();                                                          // Add Menu to Frame
 
@@ -100,6 +103,7 @@ public class ImageFrame extends JFrame {
                 if (sourceIFSFile != null) setupReady = true;   // Check ready for simulation
 
                 if (setupReady) {
+                    readIFSFile(sourceIFSFile);
 
                 }
                 else System.out.println("User cancelled simulation");
@@ -176,6 +180,39 @@ public class ImageFrame extends JFrame {
         }
 
         return src_img;                                         // Return image
+    }
+
+    // Read data from given file
+    private void readIFSFile(File sourceIFSFile) {
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(sourceIFSFile));                  // Create new reader for given file
+            String transformDescLine = br.readLine();                                               // Read each line as one transformation description
+
+            Scanner sc;                                                                             // Scanner for reading each line
+            double val;                                                                             // Value of each scan
+
+            while(transformDescLine != null) {
+                sc = new Scanner(transformDescLine);                                                // Set scanner
+                while(sc.hasNextDouble()) {
+                    val = sc.nextDouble();                                                          // Read each value from line
+
+
+
+                    if(debug) System.out.println(val);
+                }
+
+                transformDescLine = br.readLine();                                                  // Read next line
+            }
+
+
+        }
+        catch (FileNotFoundException e) {   // Handle file not found exception
+            System.out.println("File not found for passed FILE object");
+        }
+        catch (IOException e) {             // Handle IO exception for reading lines
+            System.out.println("Unable to read line from file, IOException encountered");
+        }
+
     }
 
     // Prompt file selection from user and return it
