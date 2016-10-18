@@ -1,13 +1,18 @@
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader;
+import com.sun.xml.internal.ws.developer.MemberSubmissionAddressing;
 import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
+import javafx.scene.transform.Affine;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 /**
@@ -56,6 +61,7 @@ public class ImageFrame extends JFrame {
     private File sourceIFSFile, outputIFSFile;          // Chosen IFS file & output file
     private BufferedImage targetImage;                  // Saved output image
     private Graphics2D targetGraphics;                  // Target graphics2d object
+    private ArrayList<IFSTransform> transforms;         // Transformations for simulation
 
     private boolean debug = true;                       // Debugging
 
@@ -103,9 +109,9 @@ public class ImageFrame extends JFrame {
                 if (sourceIFSFile != null) setupReady = true;   // Check ready for simulation
 
                 if (setupReady) {
-                    readIFSFile(sourceIFSFile);
-
+                    transforms = readIFSFile(sourceIFSFile);    // Get transformations for simulations
                 }
+
                 else System.out.println("User cancelled simulation");
 
             }
@@ -183,25 +189,47 @@ public class ImageFrame extends JFrame {
     }
 
     // Read data from given file
-    private void readIFSFile(File sourceIFSFile) {
+    private ArrayList<IFSTransform> readIFSFile(File sourceIFSFile) {
+
+        ArrayList<IFSTransform> transforms = new ArrayList<IFSTransform>();         // Transform collection
+        IFSTransform transform;
+
         try {
+
             BufferedReader br = new BufferedReader(new FileReader(sourceIFSFile));                  // Create new reader for given file
             String transformDescLine = br.readLine();                                               // Read each line as one transformation description
 
             Scanner sc;                                                                             // Scanner for reading each line
-            double val;                                                                             // Value of each scan
+            double[] tValues = new double[7];                                                       // Array for values, up to prob
+            int pos;                                                                                // Index of current value pos
 
             while(transformDescLine != null) {
+
                 sc = new Scanner(transformDescLine);                                                // Set scanner
+                pos = 0;                                                                            // Set prob to 0.0
+
                 while(sc.hasNextDouble()) {
-                    val = sc.nextDouble();                                                          // Read each value from line
-
-
-
-                    if(debug) System.out.println(val);
+                    tValues[pos++] = sc.nextDouble();                                               // Get all values from line
                 }
 
-                transformDescLine = br.readLine();                                                  // Read next line
+                if (debug) {
+                    for(double d : tValues) {
+                        System.out.print(d + " ");
+                    }
+                    System.out.print("\n");
+                }
+
+                // Create new transform
+                /* T Constructor order: m00 m10 m01 m11 m02 m12 prob
+                                        a   c   b   d   e   f   p
+                 */
+                // Values order: a b c d e f p
+                transform = new IFSTransform(tValues[0], tValues[2], tValues[1],
+                                                tValues[3], tValues[4], tValues[5],
+                                                tValues[6]);
+
+                transforms.add(transform);                                  // Add transform to collection
+                transformDescLine = br.readLine();                          // Read next line
             }
 
 
@@ -212,6 +240,10 @@ public class ImageFrame extends JFrame {
         catch (IOException e) {             // Handle IO exception for reading lines
             System.out.println("Unable to read line from file, IOException encountered");
         }
+
+        System.out.println("Finished");
+
+        return transforms;
 
     }
 
