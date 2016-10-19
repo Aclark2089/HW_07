@@ -1,3 +1,4 @@
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Intercepter;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader;
 import com.sun.xml.internal.ws.developer.MemberSubmissionAddressing;
 import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
@@ -58,18 +59,12 @@ import java.util.Scanner;
 public class ImageFrame extends JFrame {
 
     private JFileChooser chooser = new JFileChooser();  // File chooser
-    private File sourceIFSFile, outputIFSFile;          // Chosen IFS file & output file
+    private File sourceIFSFile;          // Chosen IFS file & output file
     private BufferedImage targetImage;                  // Saved output image
     private Graphics2D targetGraphics;                  // Target graphics2d object
     private ArrayList<IFSTransform> transforms;         // Transformations for simulation
 
     private boolean debug = true;                       // Debugging
-
-    // Colors & color masks
-    private int color_background = 0xff000000,
-                red_mask = 0x00ff0000,
-                green_mask = 0x0000ff00,
-                blue_mask = 0x000000ff;
 
     // Constructor
     public ImageFrame(int width, int height) {
@@ -111,8 +106,7 @@ public class ImageFrame extends JFrame {
                 if (setupReady) {
                     transforms = readIFSFile(sourceIFSFile);    // Get transformations for simulations
                 }
-
-                else System.out.println("User cancelled simulation");
+                else System.out.println("User cancelled loading IFS description");
 
             }
 
@@ -122,6 +116,32 @@ public class ImageFrame extends JFrame {
         configureImgItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+
+                boolean setupReady = false;                         // Check for valid input
+                int
+                        size = -1,                                  // Image size
+                        foregroundHex = Integer.MIN_VALUE,          // Image foreground hex color
+                        backgroundHex = Integer.MIN_VALUE;          // Image background hex color
+
+                // Capture user input
+                size = (int) promptCountWithMessage("Enter image size: ");
+                if (size > 0) foregroundHex = (int) promptCountWithMessage("Enter hexcode for image foreground: ");
+                if (foregroundHex != Integer.MIN_VALUE) backgroundHex = (int) promptCountWithMessage("Enter hexcode for image background: ");
+                if (backgroundHex != Integer.MIN_VALUE) setupReady = true;
+
+                if (setupReady) {
+                    targetImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);   // Create image
+                    targetGraphics = (Graphics2D) targetImage.getGraphics();                    // Generate g2d obj for image
+
+                    targetGraphics.setColor(new Color(backgroundHex));                          // Set background
+                    targetGraphics.fillRect(0, 0, size, size);
+
+                    targetGraphics.setColor(new Color(foregroundHex));                          // Set foreground color
+
+                }
+                else System.out.println("User cancelled image configuration");
+
+
             }
 
         });
@@ -130,6 +150,19 @@ public class ImageFrame extends JFrame {
         displayIFSItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+
+                boolean setupReady = false;                         // Flag for valid input
+                int n = -1;                                         // Number of generations for IFS
+
+                // Capture user input
+                n = (int) promptCountWithMessage("Enter number of generations for IFS simulation: ");
+                if (n >= 0) setupReady = true;
+
+                if (setupReady) {
+                    // Run IFS algorithm
+                }
+                else System.out.println("User cancelled IFS generation simulation");
+
             }
 
         });
@@ -139,17 +172,18 @@ public class ImageFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-//                try
-//                {
-//                    javax.imageio.ImageIO.write( image, "png", outputFile );
-//                }
-//                catch ( IOException e )
-//                {
-//                    JOptionPane.showMessageDialog( ImageFrame.this,
-//                            "Error saving file",
-//                            "oops!",
-//                            JOptionPane.ERROR_MESSAGE );
-//                }
+                try
+                {
+                    File outputFile = new File("IFS_Image.png");
+                    javax.imageio.ImageIO.write(targetImage, "png", outputFile );
+                }
+                catch ( IOException ioe )
+                {
+                    JOptionPane.showMessageDialog( ImageFrame.this,
+                            "Error saving file",
+                            "oops!",
+                            JOptionPane.ERROR_MESSAGE );
+                }
 
             }
 
@@ -166,26 +200,6 @@ public class ImageFrame extends JFrame {
         menuBar.add(fileMenu);                              // Add 'File' menu to bar
         this.setJMenuBar(menuBar);                          // Set menuBar into frame
 
-    }
-
-    // Get the source image
-    private BufferedImage getSourceImage() {
-
-        BufferedImage src_img = null;                           // Source img
-        File file = getFile();                                  // Get file object using chooser
-
-        if (file != null) {                                     // Set BufferedImage if successful
-            try {
-                src_img = ImageIO.read(file);
-            }
-            catch (IOException e) {                             // Log failure to user
-                // Output failure and notify user
-                System.out.println("Display of buffered target_image failed");
-                JOptionPane.showMessageDialog(this, e);
-            }
-        }
-
-        return src_img;                                         // Return image
     }
 
     // Read data from given file
@@ -241,8 +255,6 @@ public class ImageFrame extends JFrame {
             System.out.println("Unable to read line from file, IOException encountered");
         }
 
-        System.out.println("Finished");
-
         return transforms;
 
     }
@@ -261,41 +273,29 @@ public class ImageFrame extends JFrame {
     }
 
     // Prompt user input of step count
-    private int promptCountWithMessage(String prompt) {
+    private float promptCountWithMessage(String prompt) {
 
-        int count = -1;                                                                             // Result of capture parse
+        float count = -1;                                                                           // Result of capture parse
         String capture;                                                                             // Capture step count
 
         while(true) {
             try {
                 capture = JOptionPane.showInputDialog(prompt);                                      // Display prompt for steps & capture value
-                if(capture != null) count = Integer.parseInt(capture);                              // Parse captured string as integer
+                if(capture != null) {
+                    if (capture.contains("0x")) {
+                        count = (int) Long.parseLong( capture.substring(2, capture.length()), 16);  // Capture Hexcode as int
+                    }
+                    else count = Float.parseFloat(capture);                                         // Parse captured string as float
+                }
             } catch (Exception e) {
                 System.out.println("Failure to parse user input: " + e.getLocalizedMessage());      // Log error
-                JOptionPane.showMessageDialog(this, "Please enter an integer!");                    // Notify user of error
+                JOptionPane.showMessageDialog(this, "Please enter a number!");                      // Notify user of error
                 continue;                                                                           // Display prompt again after error
             }
             break;      // Break out of pane if size was successfully set or user cancelled the pane
         }
 
         return count;   // Return parsed step count
-    }
-
-    // Display inputted buffered target_image in frame
-    private void displayBufferedImage(BufferedImage image) {
-
-        // Set the content to contain the target_image inside of an icon inside of a label, make label scrollable
-        this.setContentPane(new JScrollPane(new JLabel(new ImageIcon(image))));
-        // Validate the ImageFrame with new content
-        this.validate();
-
-    }
-
-    // Clamp the values to [0, 255]
-    private int clampValue(int color) {
-        if(color > 255) color = 255;    // Clamp ceiling
-        if(color < 0) color = 0;        // Clamp floor
-        return color;                   // Return clamped integer of [0, 255]
     }
 
 }
