@@ -1,3 +1,5 @@
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 
 /**
@@ -20,16 +22,41 @@ public class IFSTransformList extends ArrayList<IFSTransform> {
 
     public void assignDeterminantWeights() {
 
-        double detSum = getSumOfDeterminants();                 // Get determinant total
-        double detWeight = 0;
+        double
+                detSum = getSumOfDeterminants(),                 // Get determinant total
+                detWeight = 0,                                  // Weight of current transform
+                weightTotal = 0;
+
+        int minimumCounter = 0;
 
         for(IFSTransform t : this) {
-            detWeight = t.getDeterminant() / detSum;    // Compute ratio of this transform determinant to total
-            if (detWeight < 1) detWeight = 1;           // Minimum determinant weight is 1%
-            t.setDetWeight(detWeight);                  // Set % of weight for current determinant
+
+            detWeight = (Math.abs(t.getDeterminant()) / detSum) * 100;    // Compute ratio of this transform determinant to total out of 100
+            detWeight = Math.floor(detWeight);
+            if (detWeight < 1)  {
+                detWeight = 1;                      // Minimum determinant weight is 1%
+                minimumCounter++;                   // Count number of minimum values
+            }
+
+            weightTotal += detWeight;
+            t.setDetWeight(detWeight);                          // Set % of weight for current determinant
+
         }
 
-        // Reflect and fudge weights to equal 100%
+        // Fudge weights by adding or subtracting from the non minimum values a gradient
+        if (weightTotal != 100) {
+
+            double weightDiff = Math.abs(weightTotal - 100);
+            double weightDiffGradient = weightDiff / (this.size() - minimumCounter);
+
+            if (weightTotal > 100) weightDiffGradient *= -1;
+            weightTotal = 0;
+
+            for(IFSTransform t : this) {
+                if (t.getDetWeight() > 1) t.setDetWeight(t.getDetWeight() + weightDiffGradient);
+                weightTotal += t.getDetWeight();
+            }
+        }
 
     }
 

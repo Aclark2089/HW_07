@@ -181,7 +181,6 @@ public class ImageFrame extends JFrame {
                 if (n >= 0) setupReady = true;
 
                 if (setupReady) {
-
                     final int fN = n;                               // Final n
 
                     // Start thread on running IFS algorithm simulation
@@ -189,7 +188,7 @@ public class ImageFrame extends JFrame {
                         @Override
                         public void run() {
                             // Run IFS algorithm
-                            transforms.get(0).getDeterminant();
+                            //runIFSGenerationWithThreshold()
 
                         }
                     }).start();
@@ -238,6 +237,30 @@ public class ImageFrame extends JFrame {
 
     }
 
+    private int runIFSTransformWithThreshold(int n) {
+
+        if (n == 0) return 0;
+
+        // Choose random unit sq. position
+        double x = Math.random(),
+                y = Math.random();
+
+        // Map to image position
+        x *= targetImage.getWidth();
+        y *= targetImage.getHeight();
+
+
+
+        // Select random transform
+        IFSTransform selTransform = RandomTransformSelector.chooseWithWeight(transforms);
+
+        // Compute p'
+
+
+
+        return runIFSTransformWithThreshold(n--);
+    }
+
     // Read data from given file
     private IFSTransformList readIFSFile(File sourceIFSFile) {
 
@@ -246,7 +269,7 @@ public class ImageFrame extends JFrame {
         try {
 
             BufferedReader br = new BufferedReader(new FileReader(sourceIFSFile));                  // Create new reader for given file
-            String transformDescLine = br.readLine();                                               // Read each line as one transformation description
+            String transformDescLine;                                                               // Read each line as one transformation description
 
             Scanner sc;                                                                             // Scanner for reading each line
             double[] tValues = new double[7];                                                       // Array for values, up to prob
@@ -255,7 +278,7 @@ public class ImageFrame extends JFrame {
                                                                                                     // 0 - No given probabilities, just matricies
                                                                                                     // 1 - Probability of selection given for each matrix @ end of line
 
-            while(transformDescLine != null) {
+            while((transformDescLine = br.readLine()) != null) {
 
                 sc = new Scanner(transformDescLine);                                                // Set scanner
                 pos = 0;                                                                            // Reset position index
@@ -282,10 +305,9 @@ public class ImageFrame extends JFrame {
                                                 tValues[3], tValues[4], tValues[5],
                                                 tValues[6]);
 
-                if (fileFormat == 1) transforms.transformWeightsSet = true;
+                if (fileFormat == 1) transforms.transformWeightsSet = true; // We do not have to compute weights, they were added with file
 
                 transforms.add(transform);                                  // Add transform to collection
-                transformDescLine = br.readLine();                          // Read next line
             }
 
 
