@@ -62,7 +62,7 @@ public class ImageFrame extends JFrame {
     private File sourceIFSFile;          // Chosen IFS file & output file
     private BufferedImage targetImage;                  // Saved output image
     private Graphics2D targetGraphics;                  // Target graphics2d object
-    private ArrayList<IFSTransform> transforms;         // Transformations for simulation
+    private IFSTransformList transforms;         // Transformations for simulation
 
     private boolean debug = true;                       // Debugging
 
@@ -104,7 +104,16 @@ public class ImageFrame extends JFrame {
                 if (sourceIFSFile != null) setupReady = true;   // Check ready for simulation
 
                 if (setupReady) {
-                    transforms = readIFSFile(sourceIFSFile);    // Get transformations for simulations
+
+                    // Start thread on reading IFS file and creating the transforms list
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            transforms = readIFSFile(sourceIFSFile);                                    // Get transformations for simulations
+                            if (!transforms.transformWeightsSet) transforms.assignDeterminantWeights(); // Assign det weights if they were not already manually listed
+                        }
+                    }).start();
+
                 }
                 else System.out.println("User cancelled loading IFS description");
 
@@ -130,13 +139,26 @@ public class ImageFrame extends JFrame {
                 if (backgroundHex != Integer.MIN_VALUE) setupReady = true;
 
                 if (setupReady) {
-                    targetImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);   // Create image
-                    targetGraphics = (Graphics2D) targetImage.getGraphics();                    // Generate g2d obj for image
 
-                    targetGraphics.setColor(new Color(backgroundHex));                          // Set background
-                    targetGraphics.fillRect(0, 0, size, size);
+                    // Create finals of captured vars for thread
+                    final int
+                            fSize = size,
+                            fForegroundHex = foregroundHex,
+                            fBackgroundHex = backgroundHex;
 
-                    targetGraphics.setColor(new Color(foregroundHex));                          // Set foreground color
+                    // Start thread on creating new BufferedImage
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            targetImage = new BufferedImage(fSize, fSize, BufferedImage.TYPE_INT_ARGB);   // Create image
+                            targetGraphics = (Graphics2D) targetImage.getGraphics();                    // Generate g2d obj for image
+
+                            targetGraphics.setColor(new Color(fBackgroundHex));                          // Set background
+                            targetGraphics.fillRect(0, 0, fSize, fSize);
+
+                            targetGraphics.setColor(new Color(fForegroundHex));                          // Set foreground color
+                        }
+                    }).start();
 
                 }
                 else System.out.println("User cancelled image configuration");
@@ -159,7 +181,19 @@ public class ImageFrame extends JFrame {
                 if (n >= 0) setupReady = true;
 
                 if (setupReady) {
-                    // Run IFS algorithm
+
+                    final int fN = n;                               // Final n
+
+                    // Start thread on running IFS algorithm simulation
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Run IFS algorithm
+                            transforms.get(0).getDeterminant();
+
+                        }
+                    }).start();
+
                 }
                 else System.out.println("User cancelled IFS generation simulation");
 
@@ -172,17 +206,19 @@ public class ImageFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                try
-                {
-                    File outputFile = new File("IFS_Image.png");
-                    javax.imageio.ImageIO.write(targetImage, "png", outputFile );
+                // Output file, handle exceptions
+                try {
+                    File outputFile = new File("IFS_Image.png");                    // File name, location project directory
+                    javax.imageio.ImageIO.write(targetImage, "png", outputFile);   // Write image to file of type png using outputFile
                 }
-                catch ( IOException ioe )
-                {
+                catch ( IOException ioe ) {
+
+                    // Handle IOExceptions
                     JOptionPane.showMessageDialog( ImageFrame.this,
                             "Error saving file",
                             "oops!",
                             JOptionPane.ERROR_MESSAGE );
+
                 }
 
             }
@@ -203,10 +239,9 @@ public class ImageFrame extends JFrame {
     }
 
     // Read data from given file
-    private ArrayList<IFSTransform> readIFSFile(File sourceIFSFile) {
+    private IFSTransformList readIFSFile(File sourceIFSFile) {
 
-        ArrayList<IFSTransform> transforms = new ArrayList<IFSTransform>();         // Transform collection
-        IFSTransform transform;
+        IFSTransformList transforms = new IFSTransformList();                                       // Transform collection
 
         try {
 
@@ -216,15 +251,20 @@ public class ImageFrame extends JFrame {
             Scanner sc;                                                                             // Scanner for reading each line
             double[] tValues = new double[7];                                                       // Array for values, up to prob
             int pos;                                                                                // Index of current value pos
+            int fileFormat = 0;                                                                     // Format of filetype
+                                                                                                    // 0 - No given probabilities, just matricies
+                                                                                                    // 1 - Probability of selection given for each matrix @ end of line
 
             while(transformDescLine != null) {
 
                 sc = new Scanner(transformDescLine);                                                // Set scanner
-                pos = 0;                                                                            // Set prob to 0.0
+                pos = 0;                                                                            // Reset position index
 
                 while(sc.hasNextDouble()) {
                     tValues[pos++] = sc.nextDouble();                                               // Get all values from line
                 }
+
+                if (fileFormat == 0 && pos == 7) fileFormat = 1;                                    // Set filetype
 
                 if (debug) {
                     for(double d : tValues) {
@@ -238,9 +278,11 @@ public class ImageFrame extends JFrame {
                                         a   c   b   d   e   f   p
                  */
                 // Values order: a b c d e f p
-                transform = new IFSTransform(tValues[0], tValues[2], tValues[1],
+                IFSTransform transform = new IFSTransform(tValues[0], tValues[2], tValues[1],
                                                 tValues[3], tValues[4], tValues[5],
                                                 tValues[6]);
+
+                if (fileFormat == 1) transforms.transformWeightsSet = true;
 
                 transforms.add(transform);                                  // Add transform to collection
                 transformDescLine = br.readLine();                          // Read next line
