@@ -191,8 +191,17 @@ public class ImageFrame extends JFrame {
                         @Override
                         public void run() {
 
-                            // Run IFS algorithm
+                            // Run IFS algorithm given the number of generations
                             runIFSTransformSimulation(fN);
+
+                            // Display the image on the EDT
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    // Display the buffered image to the user
+                                    displayBufferedImage(targetImage);
+                                }
+                            });
 
                         }
                     }).start();
@@ -384,6 +393,16 @@ public class ImageFrame extends JFrame {
         }
 
         return count;   // Return parsed step count
+    }
+
+    // Display inputted buffered target_image in frame
+    private void displayBufferedImage(BufferedImage image) {
+
+        // Set the content to contain the target_image inside of an icon inside of a label, make label scrollable
+        this.setContentPane(new JScrollPane(new JLabel(new ImageIcon(image))));
+        // Validate the ImageFrame with new content
+        this.validate();
+
     }
 
 }
