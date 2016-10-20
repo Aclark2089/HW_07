@@ -11,10 +11,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Alex on 10/17/16.
@@ -157,6 +159,7 @@ public class ImageFrame extends JFrame {
                             targetGraphics.fillRect(0, 0, fSize, fSize);
 
                             targetGraphics.setColor(new Color(fForegroundHex));                          // Set foreground color
+
                         }
                     }).start();
 
@@ -187,8 +190,9 @@ public class ImageFrame extends JFrame {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
+
                             // Run IFS algorithm
-                            //runIFSGenerationWithThreshold()
+                            runIFSTransformSimulation(fN);
 
                         }
                     }).start();
@@ -237,28 +241,48 @@ public class ImageFrame extends JFrame {
 
     }
 
-    private int runIFSTransformWithThreshold(int n) {
+    private void runIFSTransformSimulation(int n) {
 
-        if (n == 0) return 0;
+        int threshhold = 50;    // Fractal threshold
 
-        // Choose random unit sq. position
-        double x = Math.random(),
-                y = Math.random();
+        // Choose random point on unit sq. and scale up to image pixel coords, create dest. point for result of transform
+        Point2D p = new Point2D.Double(Math.random(), Math.random());
 
-        // Map to image position
-        x *= targetImage.getWidth();
-        y *= targetImage.getHeight();
+        // Run transforms up to threshhold to get accurate point on first attempt
+        for (int i = 0; i < threshhold-1; i++) {
+
+            // Select random transform
+            IFSTransform selTransform = RandomTransformSelector.chooseWithWeight(transforms);
+
+            // Compute p'
+            p = selTransform.transform(p, p);
+
+        }
+
+        // Begin draw of image using iterated point
+        for(int i = 0; i < n; i++) {
+
+            // Select random transform
+            IFSTransform selTransform = RandomTransformSelector.chooseWithWeight(transforms);
+
+            // Compute p'
+            p = selTransform.transform(p, p);
+
+            // Mapped positions from unit sq.
+            double
+                    xpos = p.getX() * targetImage.getWidth(),           // Mapped xpos
+                    ypos = (1 - p.getY()) * targetImage.getHeight();    // Mapped ypos needs to be flipped for screen coords
+
+            // Plot p' w/ chosen foreground color
+            try {
+                targetImage.setRGB((int) xpos, (int) ypos, targetGraphics.getColor().getRGB());
+            } catch (Exception e) {
+                System.out.println("Failed to draw.");
+            } // Handle chance that the draw goes out of bounds
 
 
+        }
 
-        // Select random transform
-        IFSTransform selTransform = RandomTransformSelector.chooseWithWeight(transforms);
-
-        // Compute p'
-
-
-
-        return runIFSTransformWithThreshold(n--);
     }
 
     // Read data from given file
