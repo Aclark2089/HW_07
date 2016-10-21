@@ -1,22 +1,11 @@
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Intercepter;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader;
-import com.sun.xml.internal.ws.developer.MemberSubmissionAddressing;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
-import javafx.scene.transform.Affine;
-
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Alex on 10/17/16.
@@ -65,6 +54,9 @@ public class ImageFrame extends JFrame {
     private BufferedImage targetImage;                  // Saved output image
     private Graphics2D targetGraphics;                  // Target graphics2d object
     private IFSTransformList transforms;         // Transformations for simulation
+
+    private Color foregroundColor;              // Foreground Color
+    private Color backgroundColor;              // Background Color
 
     private boolean debug = true;                       // Debugging
 
@@ -155,10 +147,14 @@ public class ImageFrame extends JFrame {
                             targetImage = new BufferedImage(fSize, fSize, BufferedImage.TYPE_INT_ARGB);   // Create image
                             targetGraphics = (Graphics2D) targetImage.getGraphics();                    // Generate g2d obj for image
 
-                            targetGraphics.setColor(new Color(fBackgroundHex));                          // Set background
+                            backgroundColor = new Color(fBackgroundHex);                                // Create background color
+
+                            targetGraphics.setColor(backgroundColor);                          // Set background
                             targetGraphics.fillRect(0, 0, fSize, fSize);
 
-                            targetGraphics.setColor(new Color(fForegroundHex));                          // Set foreground color
+                            foregroundColor = new Color(fForegroundHex);                                // Create foreground color
+
+                            targetGraphics.setColor(foregroundColor);                          // Set foreground color
 
                         }
                     }).start();
@@ -190,6 +186,11 @@ public class ImageFrame extends JFrame {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
+
+                            // Clear image
+                            targetGraphics.setColor(backgroundColor);
+                            targetGraphics.fillRect(0, 0, targetImage.getWidth(), targetImage.getHeight());
+                            targetGraphics.setColor(foregroundColor);
 
                             // Run IFS algorithm given the number of generations
                             runIFSTransformSimulation(fN);
@@ -285,9 +286,7 @@ public class ImageFrame extends JFrame {
             // Plot p' w/ chosen foreground color
             try {
                 targetImage.setRGB((int) xpos, (int) ypos, targetGraphics.getColor().getRGB());
-            } catch (Exception e) {
-                System.out.println("Failed to draw.");
-            } // Handle chance that the draw goes out of bounds
+            } catch (Exception e) {} // Handle chance that the draw goes out of bounds
 
 
         }
@@ -336,7 +335,7 @@ public class ImageFrame extends JFrame {
                 // Values order: a b c d e f p
                 IFSTransform transform = new IFSTransform(tValues[0], tValues[2], tValues[1],
                                                 tValues[3], tValues[4], tValues[5],
-                                                tValues[6]);
+                                                tValues[6] * 100);
 
                 if (fileFormat == 1) transforms.transformWeightsSet = true; // We do not have to compute weights, they were added with file
 
